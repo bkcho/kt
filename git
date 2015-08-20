@@ -1,0 +1,78 @@
+http://stackoverflow.com/questions/15217928/spring-security-authentication-and-authorization-using-database/18208419#18208419
+
+--------
+// javascript로 select문 add 하는 방법
+
+
+// div 두번째 영역을 나란히 붙이기
+http://howways.blogspot.kr/2013/12/HTML-set-Two-Parallel-DIVs-columns.html
+
+// postgresql
+http://bloodguy.tistory.com/entry/PostgreSQL-DateTime-Functions-and-Operators // datetime 처리
+http://bloodguy.tistory.com/entry/PostgreSQL-DB-%EB%8D%A4%ED%94%84-%EB%B3%B5%EC%88%98 // db dump 및 복구
+
+// 날짜(일)별 통계
+select count(*) as count, to_char(create_time, 'YYYY-MM-DD') as time_cbk
+from senior.user
+where create_time >= '2015-06-01' AND create_time < '2015-07-01'
+group by to_char(create_time, 'YYYY-MM-DD');
+
+// 스프링 시큐리티 DB연동방법
+http://xwoo.tistory.com/entry/2-Spring-Security-Database-%EC%97%B0%EB%8F%99%ED%95%98%EA%B8%B0
+http://preludeb.egloos.com/v/4738521
+http://trandent.com/board/Spring/detail/245  //클래스를 추가해서 하는방법
+http://syaku.tistory.com/286 // 이지희 선임님.
+http://www.mkyong.com/spring-security/spring-security-hello-world-example/ // 인터넷
+
+
+git2:x:1003:1003::/home/git2:/bin/bash
+
+
+// git 정리
+
+사전작업
+#yum update
+#yum upgrade
+
+서버구축
+ 1. git을 설치한다.
+    # yum install git
+
+ 2. git을 관리할 계정을 만든다.
+    # adduser git (계정을 생성)
+    # passwd git (패스워드를 입력한다)
+
+ 3. git을 관리할 디렉토리를 만든다.
+    $ cd /opt
+    # mkdir projects
+    # cd projects
+    # mkdir my_project
+    # chown -R git:git /opt/projects (소유자를 git 으로 변경한다)
+
+ 4. 새로운 프로젝트를 관리하기 위해 git을 초기화 한다.    
+    # git init --bare --shared ( bare옵션을 직접적으로 이 곳에서 소스를 수정하지 않겠다 shared 여러 사람들이 접속해서 소스를 수정할 수 있도록 하는것)
+
+ 5. ssh키 등록
+    # su git
+    $ cd ~   (git홈 디렉토리에 .ssh 를 만든다.)
+    클라의 공개키를 서버쪽으로 복사 시킨다.(클라이언트 2번을 수행하면됨)
+    $ mkdir .ssh
+    $ cd .ssh
+    $ cat id_rsa.ppusari.pub >> authorized_keys (authorized_keys라는 파일에 허용할 pub키를 차곡차곡 쌓아 넣는다)
+   
+    
+ 6. ssh키 등록여부 확인방법
+    $ ssh git@192.168.0.17  ( 리눅스 서버에 접속되면 서버가 잘만들어졌다 라고 확인함)
+
+ 7. git계정을 이용하여 접근할 수 없도록 보안을 설정한다. 
+    # vim /etc/passwd (들어가서 git2 계정을 수정한다)
+    git:x:1002:1003::/home/git:/usr/bin/git-shell 처럼 수정한다. 
+    클라에서 $ ssh git@192.168.0.17 로 접속해보면 바로 끊겨버리는 것을 경험 할 수 있다.
+
+
+클라이언트 구축
+ 1. 내 원도우 pc에 git을 설치한다.
+ 2. bash를 띄운다.
+    $ ssh-keygen  (key를 생성한다)
+    $ cd ~/.ssh
+    $ scp id_rsa.pub git@192.168.0.17:/home/git/id_rsa.ppusari.pub (로컬 파일을 서버로 업로드한다)
