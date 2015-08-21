@@ -1,0 +1,400 @@
+[common]
+★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★
+
+ - 보안점검
+	#passwd // 루트패스워드 변경
+	#useradd senior <- 계정생성 및 홈 디렉토리 생성 (#cat /etc/passwd | grep senior <-- 계정이 생성되었는지 확인)
+	#echo 'happy!23' | passwd --stdin senior  <-- 패스워드 변경
+	#usermod -G wheel senior <-- 명령을 허용할 계정을 wheel 그룹으로 설정
+	#passwd -x 90 root <--  패스워드 최대 사용기간 제한
+	#vim /etc/login.defs <-- 들어가서 25번 라인  PASS_MAX_DAYS 90 을 30으로 변경
+	#vim /etc/login.defs <-- 들어가서 26번 라인  PASS_MIN_DAYS 0 을 1로 변경
+	#chmod 755 /dev/shm <-- 권한변경
+	#chmod u-s /sbin/unix_chkpwd <-- SUID 해제
+	#chmod u-s /usr/bin/newgrp <-- SUID 해제 (http://cafe.naver.com/securitya/182)
+	#vim /etc/securetty <-- 들어가서 #PermitRootLogin yes 를 no로 수정 (root로 로그인 못하게 하는 방법, 꼭 그전에 하나의 계정을 wheel같은 그룹에 넣어야 한다)
+	#etc/init.d/sshd restart <--  root 접속권한을 해제하였으니 데몬을 재 시작해 준다. (http://www.linux.co.kr/home/lecture/?leccode=10411) (# service sshd restart 같은명령임)
+	#vim /etc/pam.d/su <-- 아래 내용 맨 아래 추가 후 #auth로 시작하는 것 두 개를 #제거
+	 auth required /lib/securit
+	#vim /etc/pam.d/system-auth <- 들어가서 아래 내용추가. (http://jellypo.pe.kr/53)
+	 auth required pam_tally.so onerr=fail deny=53
+	#vim /etc/profile <-- 들어가서 
+	 umask 002 to 022로 수정
+	#source /etc/profile
+	#chmod 711 /postgres/9.3  <-- postgresql DB설치된 서버만 실행
+
+ - centos 내부 방화벽 오픈
+	# vim /etc/sysconfig/iptables  	<- 방화벽 열기 편집
+	# service iptables restart 		<- 적용하기 
+	# service iptables status 		<- 확인하는 방법
+	
+ - 패스워드 정책
+	# vim /etc/login.defs 
+	# chage -l senior    // 상태 보기
+	# chage -M30 senior // 계정만료일 수정하기 
+	# chage -d 2015-07-06 senior // 최근 암호변경날짜 일 변경
+
+ - Agent 설치
+	담당자: 백경숙 과장 010-7300-0117   
+	개요: 보안을 열기 위해 agent를 설치해야한다. (solidstep)
+	sftp로 linux.tar 파일을 업로드 후 아래 작업
+	tar xvf linux.tar
+	./Install.sh
+	no
+	PG050601
+	YES 
+	(done 이라고 나오면 설치완료 한것 임)
+
+ - V3 설치
+	홈페이지: http://www.clamav.net/doc/install.html#rhel
+	#yum install -y epel-release 
+	#yum install -y clamav
+	
+ - ShellMonitorAgent 
+	id:91103288 pw:init1234!
+	Cloud IPC / IT인프라보안팀 나재민 / 10.217.27.115
+	#telnet 10.217.27.115 7778 <- 포트 열렸는지 확인하기
+	#ps -ef | grep Shell <- ShellMonitorAgent 구동중 여부 확인
+	# 설치는 19페이지 참고
+	#gunzip ShellMonitorAgent_linux64_V2.5.1.3.tar.gz 
+	#tar xvf ShellMonitorAgent_linux64_V2.5.1.3.tar.gz
+	클라이언트 감지 실행 	
+	
+★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★
+[WEB]
+★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★
+
+ - 아파치 설정 정보
+	http://cchelf.tistory.com/72
+
+ - openssl 설치
+	#yum install mod_ssl.x86_64
+	#yum install openssl.x86_64  <-- (# yum list openssl 로 확인 후 설치 되어있으면 # yum update openssl.x86_64를 한다.) 
+ 
+ - 환경설정
+	#/etc/httpd/ssl <- 폴더를 생성해서 메일에서 받은 star.happyon.olleh.com.zip 파일을 복사한 후 압축 풀기 (퍼미션 주의!! 744로 하라)
+	#/etc/httpd/ssl/ssl.pass <- 파일을 생성한 다음 안에 아래 두줄을 삽입하자 (매번 암호를 치기 않기 위해, 퍼미션 755로 하라)
+		#!/bin/sh
+		echo "h4hd4esf"  
+	
+ - httpd 설정	
+	# vim /etc/httpd/conf/httpd.conf <-들어가서 (TIP: /etc/httpd/conf/httpd.conf 가 /etc/httpd/conf.d 에 있는 파일들을 인크루드 한다음 처리되는 형식임 ex] # vim /etc/httpd/conf.d/ssl.conf)
+	<IfModule mod_proxy.c>
+	#ProxyRequests On
+	#<Proxy *>
+	#    Order deny,allow
+	#    Deny from all
+	#    Allow from .example.com
+	#</Proxy>
+	위 부분을 아래처럼 수정해야한다. (로드 벨런씽 하도록 동작하는 부분, 비버깅을 위해 일단 하나was로 들어가도록 처리하자.)
+	<IfModule mod_proxy.c>
+	#ProxyRequests On
+	#
+	<Proxy balancer://wascluster>
+			BalancerMember http://10.217.37.155:8109
+	</Proxy>
+	ProxyPass /sfs balancer://wascluster/sfs
+
+ - 환경설정파일 수정
+	(star.happyon.olleh.com.zip 압축을 풀면 나오는 설치 가이드 12페이지 읽어보자
+	# vim /etc/httpd/conf.d/ssl.conf
+ 
+	
+ - httpd 설정후 재시작
+	#service httpd restart
+
+ - 작동 확인방법
+	#openssl s_client -connect localhost:443
+
+보안설정 
+	# vim /etc/httpd/conf/httpd.conf   
+	 -> ServerTokens Os 를 ServerTokens Prod 로 변경 (http://blog.simplism.kr/?p=1510)
+	 -> <Directory "/var/www/icons">
+			LimitRequestBody 5000000   <- 이것 추가.
+		</Directory>
+	 -> <Directory> 안에 있는 모든 MultiViews 를 찾아 -MultiViews 로 변경한다.
+	 -> <Directory> 안에 있는 모든 Indexes 를 찾아 -Indexes 로 변경한다.
+	 -> <Directory> 안에 있는 모든 FollowSymLinks 를 찾아 -FollowSymLinks 로 변경한다.
+	 -> 모든 AllowOverride Node 를 찾아 AuthConfig 로 변경한다.
+	 -> ErrorDocument 400 , 401, 404, 500 주석을 해지.
+	
+웹페이지 업로드
+ - web에 static html 옮기기 (퍼미션 주의)
+	#cd /var/www/html/ 에 (css , image, terms)폴더를 압축해서 올리자.
+ - 크롭에서 https://www.happyon.olleh.com 을 접속(Load Balance에 접속됨) 하여 Apache 화면이 나타나면 정상
+  
+
+★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★
+[WAS]
+★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★
+
+ 
+ - 설정
+	# vim /usr/share/jboss-as/standalone/configuration/standalone.xml
+	
+ - deploy 하기전 작업내용
+	메이븐 설정참고: 프로젝트 우측마우스 -> configure -> Convert to Maven project
+	Run as -> Run Configurations -> Goals: eclipse:clean eclipse:eclipse  <--입력 
+	Profiles: prod  <-- 입력 ( 설정값을 prod에 맞게 바꿔주기 작업 )
+	Run 버튼 클릭
+	Refresh(F5) 키 누르면 Resource 가  prod로 적용됨 ( 이전것은 아래로 내려간다.) 
+	Export 해서 war파일을 생성한다.
+
+	Eclipse에서 리소스를 prod 버전으로 변경
+	프로젝트에서 우측마우스 클릭 후 refresh(F5) 
+	프로젝트에서 우측마우스 Export 클릭  sfs.war로 저장
+	ftp를 통해 sfs.war 파일 업로드하기 2군데
+	 
+ - deploy 방법1 (sftp를 이용)
+	# cd /usr/share/jboss/standard/deployments
+	# service jboss stop
+	# mv ~senior/sfs.war ./
+	# service jboss start
+
+ - deploy 방법2 (web page를 이용)  
+	http://10.217.37.155:8309 	 				(id: ktsfs / pw: qwer1234)
+	http://10.220.160.218:8309 					(id: ktsfs / pw: happy!23)   
+	http://admin.happyon.olleh.com:8309/ 접속 	(id: ktsfs / pw: happy!23)
+	Deployment -> Manage Deployments 클릭 
+	Add Content 클릭 -> deploy 할 war 파일 선택후 Next -> Save 버튼 클릭
+	En/ Disable 항목에서 Enable 버튼 클릭 -> Enabled 에 V표시 되면 성공 
+  
+  - deploy 웹페이지 암호설정
+	 # /usr/share/jboss-as/bin/add-user.sh <- 이 명령을 통해서 암호를 설정한다.
+	 암호 삭제하는 곳 vim /usr/share/jboss-as/standalone/configuration/mgmt-users.properties
+  
+ - TestBad deploy path
+	# /usr/local/jboss/standard/log
+	# /usr/local/jboss/standard/deployments		<- 디플로이 사이트 (http://10.217.37.155:8309/console/App.html#deployments)
+ 
+ - 로그 확인1 (검색기능)
+	# vim /usr/share/jboss/standard/log/server.log
+	
+ - 로그 확인2 (실시간 확인)
+	# tail -f server.log  <- 실시간 로고보기
+
+
+
+★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★
+[ADMIN]
+★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★
+
+아파치 url redirect
+	# vim /etc/httpd/conf/httpd.conf
+	<VirtualHost *:80>
+		 Redirect / http://admin.happyon.olleh.com/SfsAdmin/
+	</VirtualHost>
+	
+
+
+★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★
+[DB]
+★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★
+
+ -DB 접속안될때
+	#su - postgresql
+	#/postgres/9.3/bin/pg_ctl start
+
+ - DB 접속하기
+	STGClient를 이용하여 DB서버에 접속한 후
+	$su - postgres
+	$psql -U senior
+	
+
+문서
+http://www.postgresql.org/docs/8.0/static/index.html 
+
+설치 (CentOS기준)
+# yum list postgres*    // 설치여부 확인하기
+# sudo yum install postgresql-server  // 설치하기
+# cd /var/lib/pgsql/	// 폴더로 이동하여 Data directory 가 생성됐는지 확인
+
+제거
+# rpm -qa|grep postgres //검색
+# rpm -e --nodeps // 삭제
+
+보안설정
+# vi /var/lib/pgsql/data/pg_hba.conf
+하단에 “host all all 61.109.0.0/0 password” 을 추가 (특정 아이피대역만 접속허용)
+
+// DB 설정 ( postgresql )
+#vim /data/sfs/pg_hba.conf (허용 아이피 등록) 
+  
+########## start kt hba.conf Wed Apr 29 09:17:02 KST 2015
+local all all ident               # generated by kt
+local all all md5                 # generated by kt
+host all all 0.0.0.0/0 md5        # generated by kt
+########## end of kt hba.conf Wed Apr 29 09:17:02 KST 2015
+
+
+# vi /var/lib/pgsql/data/postgresql.conf
+49번 라인 → #listen_addresses = 'localhost' 을 listen_addresses = '*' 으로 수정한다.
+52번 라인 → #port = 5432 을 port = 5432 으로 수정한다. (앞부분#제거)
+
+서비스 동작
+# chkconfig postgresql on	// OS가 부팅될 때 자동으로 PostgreSQL 을 시작
+# service postgresql start	// 서비스 시작
+# service postgresql stop	// 서비스 중지
+# service postgresql restart	// 서비스 재시작
+
+// postgres 계정 패스워드 new123!
+
+접속 및 종료
+접속
+# su - postgres	// ( 띄어쓰기 주의)
+-bash-3.2$ psql	 
+
+종료
+postgres=# \q		
+-bash-3.2$ exit 	
+계정
+
+계정확인
+postgres=# select*from pg_user;
+
+계정생성
+-bash-3.2$ createuser ppusari
+Shall the new role be a superuser? (y/n) n
+Shall the new role be allowed to create databases? (y/n) n
+Shall the new role be allowed to create more new roles? (y/n) n
+
+비밀번호 변경
+postgres=# alter user postgres with password '1234'
+ 
+
+쿼리예제
+
+테이블 보기
+postgres=# \dt 	
+
+DB생성
+{root@funbox bin]# su - postgres
+-bash-3.2$ createdb mydb
+CREATE DATABASE
+-bash-3.2$ 
+-bash-3.2$ psql mydb
+Welcome to psql 8.1.23, the PostgreSQL interactive terminal.
+
+Type:  \copyright for distribution terms
+       \h for help with SQL commands
+       \? for help with psql commands
+       \g or terminate with semicolon to execute query
+       \q to quit
+
+mydb=#
+ 
+
+데이블 생성
+mydb=# create table member (
+mydb(# city varchar(80),
+mydb(# temp_lo int,
+mydb(# temp_hi int,
+mydb(# prcp real,
+mydb(# date date);
+CREATE TABLE
+mydb=#
+
+데이터 삽입
+mydb=# insert into weather values ('San Francisco', '46', '50', 0.25, '2015-4-1');
+
+SELECT문
+mydb=# select * from weather;
+
+테이블 삭제
+#DROP table member;
+
+// DB 쿼리 
+select * from senior.user order by user_id asc;				// 정렬하여 모든 값 보기
+update senior.USER set USE_RADIO = 1 where USER_ID = 344;	// 특정 값 변경
+delete from senior.user where user_id=327					// 특정 row 한줄 삭제
+alter table senior.promotion drop column contents;   		// 컬럼 삭제
+ALTER TABLE senior.promotion ADD COLUMN create_time timestamp without time zone;	// 컬럼 추가
+ALTER TABLE senior.promotion ALTER COLUMN create_time SET NOT NULL;					// 컬럼 속성주기
+DROP TABLE senior.promotioin;								// 테이블 삭제하기	
+select luck_num from senior.promotion where luck_num = (select max(luck_num) from senior.promotion) group by luck_num; // 최고값 하나만 가져오기
+select * from senior.user where ctn='010-2627-0559' AND user_id=1;  // where AND 연산 활용
+SELECT * // 날짜조건
+FROM   senior.promotion d
+WHERE  d.create_time >= '2015-07-10 0:0'
+AND    d.create_time <  '2015-07-10 23:59'
+
+
+
+// 패스워드 변경
+#su - postgres  (계정은 postgres으로 접속해야 함)
+ postgres=#ALTER USER senior WITH ENCRYPTED PASSWORD 'happy!23';    (DB 패스워드 변경) 
+ postgres=#ALTER USER senior_monitor WITH ENCRYPTED PASSWORD 'happy!23';    (DB 패스워드 변경) 
+ postgres=#ALTER USER senior_user WITH ENCRYPTED PASSWORD 'happy!23';    (DB 패스워드 변경) 
+ 
+Eclipse에 연결
+드라이버 연결 jar파일 다운로드( link: 8.1-415 JDBC 2EE )
+https://jdbc.postgresql.org/download.html 
+
+다운로드한 파일(postgresql-8.1-415.jdbc2ee.jar) 을 C:\Program Files\Java\jre1.8.0_40\lib\ext 폴더에 복사한다. (이 작업을 하지 않으려면 아래처럼 lib 폴더에 Drag & Drop 하면된다)
+연결 확인을 위해  계정 및 생성한 테이블을 입력한 후 Test Connection 버튼을 눌러본다. 
+
+소스코드를 이용한 DB 접속
+<%!	Connection con = null;
+	Statement stmt = null;	
+	ResultSet rs = null;
+	String driver = "org.postgresql.Driver";
+	String url = "jdbc:postgresql://61.109.146.42:5432/postgres";
+	String user = "postgres";
+	String upw = "1234";
+	String sql = "SELECT * FROM member";
+%>
+<%	try {
+		Class.forName(driver);
+		con = DriverManager.getConnection(url, user, upw);
+		stmt = con.createStatement();
+		rs = stmt.executeQuery(sql);
+		
+		while (rs.next()) {			
+			out.println(rs.getString("id"));			
+		}
+	}
+	catch(Exception e) {
+		System.out.println("ERROR: " + e.getMessage());		
+	}	 
+%>
+
+
+참고 사이트  
+설치하기 ( CentOS )
+http://blog.naver.com/ships95/220234982400 
+http://chess72.tistory.com/112
+
+DB 생성하기
+https://www.digitalocean.com/community/tutorials/how-to-install-and-use-postgresql-on-a-centos-vps 
+
+외부 아이피 접속하기 설정.
+http://ngee.tistory.com/554 
+
+eclipse에서 접속하기.
+http://www.itdi.co.kr/onuri/bbs/board.php?bo_table=03_3&wr_id=57 
+
+연결설정
+http://tltlzhf.blog.me/150170476388 
+
+DB입력 자바코드
+http://kin.naver.com/qna/detail.nhn?d1id=1&dirId=1040201&docId=69451148&qb=cG9zdGdyZXNxbCAgcG9zdGdyZXNxbC5Ecml2ZXI=&enc=utf8&section=kin&rank=3&search_sort=0&spq=0&pid=SeySqwpySoGssu%2BmfoGsssssssl-141293&sid=BtUKIK/DH4sep931S4AB1A%3D%3D 
+
+드라이버 다운로드
+https://jdbc.postgresql.org/download.html 
+
+
+Error 처리 knowhow
+문제: No suitable driver found for jdbc:postgresql:  
+해결1: 프로젝트에 postgresql-8.1-415.jdbc2ee.jar 파일을 lib 폴더에 Drag&Drop 한다.
+해결2  C:\Program Files\Java\jre1.8.0_40\lib\ext 폴더에 복사한다. (둘 중 하나만 하면 됨)
+
+★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★
+[기타]
+★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★
+
+// was서버 다운 이력 (7월 13일)
+00:30:53,509 [     ] INFO  [org.jboss.as.controller] - JBAS014774: Service status report
+JBAS014775:    New missing/unsatisfied dependencies:
+      service jboss.server.controller.management.security_realm.ApplicationRealm.properties_authentication (missing) dependents: [service jboss.server.controller.management.security_realm.ApplicationRealm]
+00:30:53,541 [     ] INFO  [org.jboss.as.osgi] - JBAS011942: Stopping OSGi Framework
+
