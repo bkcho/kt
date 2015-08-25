@@ -76,3 +76,7 @@ git2:x:1003:1003::/home/git2:/bin/bash
     $ ssh-keygen  (key를 생성한다)
     $ cd ~/.ssh
     $ scp id_rsa.pub git@192.168.0.17:/home/git/id_rsa.ppusari.pub (로컬 파일을 서버로 업로드한다)
+
+
+// git클라이언트에서 땡겨오기 참고
+http://artwook.tistory.com/261
